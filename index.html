@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0F0F0F">
+<title>SDL - Swastik Digital Library</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+:root{
+  --bg:#0F0F0F;--bg2:#1A1A1A;--bg3:#242424;--bg4:#2E2E2E;
+  --orange:#FF6B00;--orange2:#FF8C35;--og:rgba(255,107,0,0.15);
+  --green:#00C853;--gbg:rgba(0,200,83,0.12);
+  --red:#FF3D3D;--rbg:rgba(255,61,61,0.12);
+  --blue:#2979FF;--bbg:rgba(41,121,255,0.12);
+  --yellow:#FFD600;--ybg:rgba(255,214,0,0.12);
+  --text:#F0F0F0;--t2:#A0A0A0;--t3:#606060;
+  --bdr:#2E2E2E;--bdr2:#3A3A3A;
+  --card:#1A1A1A;--f:'Poppins',sans-serif;
+}
+.light{
+  --bg:#F5F5F5;--bg2:#FFFFFF;--bg3:#F0F0F0;--bg4:#E0E0E0;
+  --text:#1A1A1A;--t2:#666666;--t3:#999999;
+  --bdr:#E0E0E0;--bdr2:#CCCCCC;--card:#FFFFFF;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;-webkit-tap-highlight-color:transparent;}
+body{font-family:var(--f);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background 0.3s,color 0.3s;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--orange);border-radius:2px;}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:30px;}
+.login-logo{font-size:52px;font-weight:800;color:var(--orange);letter-spacing:0.1em;text-align:center;}
+.login-sub{font-size:12px;color:var(--t2);letter-spacing:0.2em;text-transform:uppercase;margin-top:4px;margin-bottom:40px;text-align:center;}
+.login-card{width:100%;max-width:360px;background:var(--bg2);border-radius:20px;padding:28px;border:1px solid var(--bdr);}
+.login-title{font-size:20px;font-weight:700;margin-bottom:20px;text-align:center;}
+.login-err{background:var(--rbg);color:var(--red);padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;display:none;border:1px solid rgba(255,61,61,0.2);}
+
+/* NO INTERNET */
+#noInternet{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9998;padding:30px;text-align:center;}
+.ni-icon{font-size:60px;margin-bottom:16px;}
+.ni-title{font-size:22px;font-weight:700;margin-bottom:8px;}
+.ni-sub{font-size:14px;color:var(--t2);line-height:1.6;margin-bottom:24px;}
+.ni-btn{padding:14px 32px;background:var(--orange);color:white;border:none;border-radius:12px;font-family:var(--f);font-size:14px;font-weight:700;cursor:pointer;}
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--bdr);box-shadow:0 2px 12px rgba(0,0,0,0.2);}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.tb-back{width:34px;height:34px;background:var(--bg3);border:1px solid var(--bdr2);border-radius:50%;color:var(--orange);font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;font-family:var(--f);border:none;}
+.tb-back.show{display:flex;}
+.tb-logo{font-size:20px;font-weight:800;color:var(--orange);}
+.tb-logo span{font-size:10px;display:block;color:var(--t2);font-weight:400;letter-spacing:0.1em;line-height:1;}
+.tb-title{font-size:15px;font-weight:700;display:none;}
+.tb-right{display:flex;gap:8px;align-items:center;}
+.ibtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--bdr2);background:var(--bg3);color:var(--t2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:all 0.2s;}
+.ibtn:active{background:var(--og);color:var(--orange);}
+.ndot{position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid var(--bg2);display:none;}
+.ndot.show{display:block;}
+
+/* PAGES */
+.page{display:none;padding:14px 14px 90px;animation:fu 0.25s ease;}
+.page.active{display:block;}
+@keyframes fu{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--bdr);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+.ni2{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;border:none;background:none;color:var(--t3);gap:3px;transition:color 0.2s;}
+.ni2.active{color:var(--orange);}
+.nicon{font-size:20px;}
+.nlbl{font-size:9px;font-weight:600;letter-spacing:0.05em;font-family:var(--f);}
+
+/* FAB */
+.fab{position:fixed;bottom:76px;right:16px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--orange2));color:white;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(255,107,0,0.5);z-index:200;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.fab:active{transform:scale(0.92);}
+
+/* CARDS */
+.card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--bdr);margin-bottom:12px;}
+.ctitle{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+
+/* DASHBOARD HERO */
+.dhero{background:linear-gradient(135deg,#1A0800,#2D1200);border-radius:20px;padding:20px;margin-bottom:14px;border:1px solid rgba(255,107,0,0.2);position:relative;overflow:hidden;}
+.dhero::after{content:'';position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(255,107,0,0.25),transparent 70%);border-radius:50%;}
+.d-date{font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;}
+.d-greet{font-size:20px;font-weight:800;color:white;line-height:1.2;}
+.d-sub{font-size:11px;color:var(--orange);margin-top:4px;font-weight:500;}
+
+/* STATS */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.sc{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--bdr);position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;}
+.sc.so::before{background:var(--orange);}
+.sc.sg::before{background:var(--green);}
+.sc.sr::before{background:var(--red);}
+.sc.sb::before{background:var(--blue);}
+.s-icon{font-size:22px;margin-bottom:8px;}
+.s-val{font-size:22px;font-weight:800;line-height:1;}
+.s-lbl{font-size:10px;color:var(--t2);margin-top:4px;font-weight:500;}
+
+/* DUE ITEMS */
+.ditem{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bdr);cursor:pointer;}
+.ditem:last-child{border-bottom:none;}
+.d-info{flex:1;min-width:0;}
+.d-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.d-meta{font-size:11px;color:var(--t2);margin-top:2px;}
+
+/* BADGES */
+.badge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;}
+.b-red{background:var(--rbg);color:var(--red);}
+.b-orange{background:var(--og);color:var(--orange);}
+.b-blue{background:var(--bbg);color:var(--blue);}
+.b-green{background:var(--gbg);color:var(--green);}
+.b-yellow{background:var(--ybg);color:var(--yellow);}
+
+/* SEARCH */
+.sw{position:relative;margin-bottom:12px;}
+.si{width:100%;padding:11px 14px 11px 38px;background:var(--bg2);border:1px solid var(--bdr2);border-radius:12px;font-family:var(--f);font-size:13px;color:var(--text);outline:none;}
+.si:focus{border-color:var(--orange);}
+.s-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;}
+
+/* CHIPS */
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--bdr2);background:var(--bg2);color:var(--t2);cursor:pointer;white-space:nowrap;font-family:var(--f);transition:all 0.2s;}
+.chip.active{background:var(--orange);color:white;border-color:var(--orange);}
+
+/* STUDENT CARDS */
+.stucard{background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--bdr);margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 0.2s;}
+.stucard:active{border-color:var(--orange);}
+.stu-info{flex:1;min-width:0;}
+.stu-name{font-size:14px;font-weight:700;}
+.stu-meta{font-size:11px;color:var(--t2);margin-top:3px;}
+.stu-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+.stu-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+.tag-m{background:rgba(41,121,255,0.15);color:#6BA3FF;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;}
+.tag-e{background:rgba(170,0,255,0.15);color:#CC66FF;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;}
+.tag-f{background:rgba(255,107,0,0.15);color:#FFA560;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;}
+
+/* CABINS */
+.stog{display:flex;background:var(--bg3);border-radius:12px;padding:4px;margin-bottom:14px;gap:4px;}
+.sbtn{flex:1;padding:8px;border-radius:9px;border:none;font-family:var(--f);font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--t2);transition:all 0.2s;}
+.sbtn.active{background:var(--orange);color:white;}
+.cleg{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+.l-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);}
+.l-dot{width:10px;height:10px;border-radius:3px;}
+.cgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+.cc{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.15s;border:1px solid transparent;-webkit-tap-highlight-color:transparent;}
+.cc:active{transform:scale(0.9);}
+.cc.free{background:rgba(0,200,83,0.12);border-color:rgba(0,200,83,0.2);}
+.cc.occ{background:rgba(255,61,61,0.12);border-color:rgba(255,61,61,0.2);}
+.cc.full{background:rgba(255,107,0,0.12);border-color:rgba(255,107,0,0.2);}
+.c-num{font-size:11px;font-weight:800;}
+.c-ico{font-size:8px;margin-top:1px;}
+
+/* FEES */
+.mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.mname{font-size:16px;font-weight:700;}
+.marr{width:34px;height:34px;border-radius:50%;border:1px solid var(--bdr2);background:var(--bg2);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--f);transition:all 0.2s;}
+.marr:active{background:var(--orange);color:white;border-color:var(--orange);}
+.fsum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.fsc{background:var(--card);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid var(--bdr);}
+.fsv{font-size:16px;font-weight:800;}
+.fsl{font-size:9px;color:var(--t2);margin-top:3px;font-weight:500;}
+.frow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--bdr);}
+.frow:last-child{border-bottom:none;}
+.f-info{flex:1;min-width:0;}
+.f-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.f-meta{font-size:11px;color:var(--t2);margin-top:2px;}
+.f-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.f-amt{font-size:13px;font-weight:700;}
+.fbtns{display:flex;gap:4px;}
+.fbtn{padding:4px 8px;border-radius:6px;border:none;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--f);transition:all 0.15s;}
+.fbtn:active{transform:scale(0.92);}
+.b-pay{background:var(--gbg);color:var(--green);}
+.b-part{background:var(--ybg);color:var(--yellow);}
+.b-unpay{background:var(--green);color:white;}
+
+/* SETTINGS */
+.sitem{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--bdr);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.sitem:last-child{border-bottom:none;}
+.sitem:active{opacity:0.7;}
+.s-ico2{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.s-tinfo{flex:1;}
+.s-title{font-size:14px;font-weight:600;}
+.s-desc{font-size:11px;color:var(--t2);margin-top:2px;}
+.s-arr{color:var(--t3);font-size:18px;}
+.toggle-wrap{display:flex;align-items:center;}
+.toggle{position:relative;width:44px;height:24px;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-sl{position:absolute;inset:0;background:var(--bdr2);border-radius:24px;cursor:pointer;transition:0.3s;}
+.toggle-sl:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.3s;}
+input:checked+.toggle-sl{background:var(--orange);}
+input:checked+.toggle-sl:before{transform:translateX(20px);}
+
+/* MODALS */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+.ov.open{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border-radius:24px 24px 0 0;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);border-top:1px solid var(--bdr2);}
+.ov.open .modal{transform:translateY(0);}
+.m-handle{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:12px auto 0;}
+.m-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--bdr);}
+.m-title{font-size:16px;font-weight:700;}
+.m-close{width:30px;height:30px;border-radius:50%;border:none;background:var(--bg3);color:var(--t2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.m-body{padding:16px 18px;}
+
+/* CONFIRM DIALOG */
+.confirm-ov{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;padding:20px;}
+.confirm-ov.open{opacity:1;pointer-events:all;}
+.confirm-box{background:var(--bg2);border-radius:20px;padding:24px;width:100%;max-width:320px;text-align:center;border:1px solid var(--bdr2);transform:scale(0.9);transition:transform 0.3s;}
+.confirm-ov.open .confirm-box{transform:scale(1);}
+.confirm-icon{font-size:40px;margin-bottom:12px;}
+.confirm-title{font-size:17px;font-weight:700;margin-bottom:8px;}
+.confirm-msg{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:20px;}
+.confirm-btns{display:flex;gap:10px;}
+.confirm-yes{flex:1;padding:12px;border-radius:12px;border:none;background:var(--orange);color:white;font-family:var(--f);font-size:14px;font-weight:700;cursor:pointer;}
+.confirm-no{flex:1;padding:12px;border-radius:12px;border:1px solid var(--bdr2);background:var(--bg3);color:var(--t2);font-family:var(--f);font-size:14px;font-weight:600;cursor:pointer;}
+
+/* FORMS */
+.fg{margin-bottom:14px;}
+.fl{font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px;display:block;letter-spacing:0.05em;text-transform:uppercase;}
+.fi{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--bdr2);border-radius:12px;font-family:var(--f);font-size:14px;color:var(--text);outline:none;transition:border 0.2s;-webkit-appearance:none;}
+.fi:focus{border-color:var(--orange);}
+.fsel{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23A0A0A0'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;appearance:none;-webkit-appearance:none;}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn{width:100%;padding:14px;border-radius:12px;border:none;font-family:var(--f);font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.btn:active{transform:scale(0.97);}
+.b-prim{background:linear-gradient(135deg,var(--orange),var(--orange2));color:white;}
+.b-dang{background:var(--rbg);color:var(--red);margin-top:8px;}
+.b-sec{background:var(--bg3);color:var(--t2);border:1px solid var(--bdr2);}
+
+/* PHOTO UPLOAD */
+.pua{border:2px dashed var(--bdr2);border-radius:16px;padding:20px;text-align:center;cursor:pointer;position:relative;overflow:hidden;background:var(--bg3);transition:border-color 0.2s;}
+.pua:active{border-color:var(--orange);}
+.pua input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;font-size:0;}
+.p-prev{width:90px;height:90px;border-radius:50%;object-fit:cover;object-position:center top;border:3px solid var(--orange);margin:0 auto 8px;display:block;}
+.p-ph{font-size:36px;margin-bottom:8px;}
+.p-ut{font-size:12px;color:var(--t2);}
+
+/* STUDENT DETAIL */
+.det-hdr{background:linear-gradient(135deg,#1A0800,#2D1200);border-radius:16px;padding:20px;text-align:center;margin-bottom:14px;border:1px solid rgba(255,107,0,0.15);}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.icell{background:var(--bg3);border-radius:12px;padding:12px;border:1px solid var(--bdr);}
+.i-lbl{font-size:10px;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;}
+.i-val{font-size:15px;font-weight:700;}
+.fhi{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bdr);font-size:13px;}
+.fhi:last-child{border-bottom:none;}
+.arow{display:flex;gap:8px;}
+.arow .btn{padding:11px 14px;font-size:12px;}
+
+/* RECEIPT OPTIONS DIALOG */
+.rcpt-ov{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10002;display:none;align-items:center;justify-content:center;padding:20px;}
+.rcpt-ov.open{display:flex;}
+.rcpt-box{background:var(--bg2);border-radius:20px;padding:24px 20px;width:100%;max-width:340px;border:1px solid var(--bdr2);animation:fu 0.2s ease;}
+.rcpt-ico{font-size:40px;text-align:center;margin-bottom:8px;}
+.rcpt-ttl{font-size:17px;font-weight:800;text-align:center;margin-bottom:4px;}
+.rcpt-sub{font-size:12px;color:var(--t2);text-align:center;margin-bottom:20px;}
+.rcpt-opt{display:flex;flex-direction:column;gap:10px;}
+.rcpt-btn{width:100%;padding:15px 16px;border-radius:14px;border:none;font-family:var(--f);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px;}
+.rcpt-btn-wa{background:linear-gradient(135deg,#25d366,#128c7e);color:white;}
+.rcpt-btn-print{background:var(--bg3);color:var(--text);border:1px solid var(--bdr2);}
+.rcpt-btn-cancel{background:transparent;color:var(--t2);font-size:13px;justify-content:center;padding:10px;}
+
+/* IMAGE LIGHTBOX */
+.img-lb-ov{position:fixed;inset:0;background:rgba(0,0,0,0.97);z-index:10001;display:none;flex-direction:column;align-items:center;justify-content:center;animation:fu 0.2s ease;}
+.img-lb-ov.open{display:flex;}
+.img-lb-back{position:absolute;top:18px;left:16px;width:42px;height:42px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);border-radius:50%;color:white;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--f);}
+.img-lb-back:active{background:rgba(255,255,255,0.25);}
+.img-lb-label{position:absolute;top:26px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.5);font-size:12px;font-family:var(--f);pointer-events:none;}
+.img-lb-img{max-width:92vw;max-height:82vh;border-radius:14px;object-fit:contain;box-shadow:0 8px 48px rgba(0,0,0,0.7);}
+.img-lb-clickable{cursor:zoom-in;transition:transform 0.15s;}
+.img-lb-clickable:active{transform:scale(0.96);}
+
+/* PARTIAL */
+.p-inf{background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:16px;}
+.p-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;}
+.p-row:last-child{margin-bottom:0;}
+.p-lbl{color:var(--t2);}
+.p-val{font-weight:700;}
+.pb-w{height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;margin-top:10px;}
+.pb-f{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--orange),var(--orange2));transition:width 0.5s;}
+
+/* REPORT */
+.rrow{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.r-lbl{font-size:12px;font-weight:600;min-width:72px;color:var(--t2);}
+.r-track{flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;}
+.r-fill{height:100%;border-radius:4px;}
+.r-val{font-size:12px;font-weight:700;min-width:48px;text-align:right;}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 16px;color:var(--t2);}
+.e-ico{font-size:44px;margin-bottom:12px;}
+.e-txt{font-size:14px;line-height:1.6;}
+
+/* LOADER */
+.loader-ov{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;display:none;}
+.loader{width:40px;height:40px;border:3px solid var(--bdr2);border-top-color:var(--orange);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg3);color:var(--text);padding:10px 20px;border-radius:30px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:all 0.3s;white-space:nowrap;border:1px solid var(--bdr2);box-shadow:0 4px 20px rgba(0,0,0,0.5);border-left:3px solid var(--orange);font-family:var(--f);pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- NO INTERNET -->
+<div id="noInternet">
+  <div class="ni-icon">📡</div>
+  <div class="ni-title">No Internet Connection</div>
+  <div class="ni-sub">SDL app ke liye internet zaroori hai.<br>Please apna internet connection check karein aur dobara try karein.</div>
+  <button class="ni-btn" onclick="checkInternet()">Retry</button>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-logo">SDL</div>
+  <div class="login-sub">Swastik Digital Library</div>
+  <div class="login-card">
+    <div class="login-title">🔐 Owner Login</div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="fg"><label class="fl">Email</label><input class="fi" id="loginEmail" type="email" placeholder="Enter your email"></div>
+    <div class="fg"><label class="fl">Password</label><input class="fi" id="loginPass" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn b-prim" onclick="doLogin()" id="loginBtn">Login</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-left">
+      <button class="tb-back" id="tbBack" onclick="goBack()">&#8592;</button>
+      <div class="tb-logo" id="tbLogo">SDL<span>Swastik Digital Library</span></div>
+      <div class="tb-title" id="tbTitle"></div>
+    </div>
+    <div class="tb-right">
+      <button class="ibtn" onclick="showPage('notifications')">🔔<span class="ndot" id="ndot"></span></button>
+      <button class="ibtn" onclick="doLogout()" title="Logout">🚪</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="dhero">
+      <div class="d-date" id="dDate"></div>
+      <div class="d-greet">Good <span id="dGreet"></span>! 🙏</div>
+      <div class="d-sub">Swastik Digital Library</div>
+    </div>
+    <div class="sgrid">
+      <div class="sc so"><div class="s-icon">👨‍🎓</div><div class="s-val" id="st1">0</div><div class="s-lbl">Total Students</div></div>
+      <div class="sc sg"><div class="s-icon">💰</div><div class="s-val" id="st2">₹0</div><div class="s-lbl">Collected</div></div>
+      <div class="sc sr"><div class="s-icon">⚠️</div><div class="s-val" id="st3">0</div><div class="s-lbl">Dues Pending</div></div>
+      <div class="sc sb"><div class="s-icon">🪑</div><div class="s-val" id="st4">0</div><div class="s-lbl">Cabins Used</div></div>
+    </div>
+    <div class="card"><div class="ctitle">⚠️ Due Alerts</div><div id="dueList"></div></div>
+    <div class="card"><div class="ctitle">📊 This Month</div><div id="dRep"></div></div>
+  </div>
+
+  <!-- STUDENTS -->
+  <div class="page" id="page-students">
+    <div class="sw"><span class="s-ico">🔍</span><input class="si" id="sInput" placeholder="Search name, cabin, phone..." oninput="renderStudents()"></div>
+    <div class="chips">
+      <div class="chip active" onclick="setF(this,'all')">All</div>
+      <div class="chip" onclick="setF(this,'morning')">🌅 Morning</div>
+      <div class="chip" onclick="setF(this,'evening')">🌆 Evening</div>
+      <div class="chip" onclick="setF(this,'full')">☀️ Full</div>
+      <div class="chip" onclick="setF(this,'due')">⚠️ Due</div>
+      <div class="chip" onclick="setF(this,'paid')">✅ Paid</div>
+    </div>
+    <div id="stuList"></div>
+  </div>
+
+  <!-- CABINS -->
+  <div class="page" id="page-cabins">
+    <div class="stog">
+      <button class="sbtn active" id="csMorn" onclick="setCS('morning')">🌅 Morning (7AM-1PM)</button>
+      <button class="sbtn" id="csEve" onclick="setCS('evening')">🌆 Evening (1PM-7PM)</button>
+    </div>
+    <div class="cleg">
+      <div class="l-item"><div class="l-dot" style="background:rgba(0,200,83,0.5)"></div>Free</div>
+      <div class="l-item"><div class="l-dot" style="background:rgba(255,61,61,0.5)"></div>Occupied</div>
+      <div class="l-item"><div class="l-dot" style="background:rgba(255,107,0,0.5)"></div>Full Shift</div>
+    </div>
+    <div class="cgrid" id="cGrid"></div>
+    <div class="card" style="margin-top:12px"><div class="ctitle">📋 Summary</div><div id="cSum"></div></div>
+  </div>
+
+  <!-- FEES -->
+  <div class="page" id="page-fees">
+    <div class="mnav">
+      <button class="marr" onclick="chMon(-1)">&#8592;</button>
+      <div class="mname" id="fMon"></div>
+      <button class="marr" onclick="chMon(1)">&#8594;</button>
+    </div>
+    <div class="fsum">
+      <div class="fsc"><div class="fsv" style="color:var(--orange)" id="fTot">₹0</div><div class="fsl">Total</div></div>
+      <div class="fsc"><div class="fsv" style="color:var(--green)" id="fCol">₹0</div><div class="fsl">Collected</div></div>
+      <div class="fsc"><div class="fsv" style="color:var(--red)" id="fPen">₹0</div><div class="fsl">Pending</div></div>
+    </div>
+    <div class="card"><div class="ctitle">💳 Fee Records</div><div id="fList"></div></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="card">
+      <div class="ctitle">⚙️ Settings</div>
+      <div class="sitem" onclick="openM('feeModal')">
+        <div class="s-ico2" style="background:rgba(255,107,0,0.12)">💰</div>
+        <div class="s-tinfo"><div class="s-title">Fee Structure</div><div class="s-desc" id="feeDesc">Tap to edit</div></div>
+        <div class="s-arr">›</div>
+      </div>
+      <div class="sitem" onclick="openM('cabinModal2')">
+        <div class="s-ico2" style="background:rgba(41,121,255,0.12)">🪑</div>
+        <div class="s-tinfo"><div class="s-title">Cabin Settings</div><div class="s-desc" id="cabDesc">Tap to edit</div></div>
+        <div class="s-arr">›</div>
+      </div>
+      <div class="sitem">
+        <div class="s-ico2" style="background:rgba(255,214,0,0.12)">🌙</div>
+        <div class="s-tinfo"><div class="s-title">Dark / Light Theme</div><div class="s-desc">Toggle app theme</div></div>
+        <div class="toggle-wrap">
+          <label class="toggle"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="toggle-sl"></span></label>
+        </div>
+      </div>
+      <div class="sitem" onclick="exportData()">
+        <div class="s-ico2" style="background:rgba(0,200,83,0.12)">📤</div>
+        <div class="s-tinfo"><div class="s-title">Export Backup</div><div class="s-desc">Save all data as JSON</div></div>
+        <div class="s-arr">›</div>
+      </div>
+      <div class="sitem" onclick="document.getElementById('impFile').click()">
+        <div class="s-ico2" style="background:rgba(170,0,255,0.12)">📥</div>
+        <div class="s-tinfo"><div class="s-title">Import Backup</div><div class="s-desc">Restore from JSON file</div></div>
+        <div class="s-arr">›</div>
+      </div>
+      <input type="file" id="impFile" accept=".json" style="display:none" onchange="importData(event)">
+      <div class="sitem" onclick="doLogout()">
+        <div class="s-ico2" style="background:rgba(255,61,61,0.12)">🚪</div>
+        <div class="s-tinfo"><div class="s-title">Logout</div><div class="s-desc">Sign out of SDL</div></div>
+        <div class="s-arr">›</div>
+      </div>
+    </div>
+    <div class="card"><div class="ctitle">📊 Library Stats</div><div id="libStats"></div></div>
+    <div class="card" style="text-align:center;padding:20px">
+      <div style="font-size:26px;font-weight:800;color:var(--orange)">SDL</div>
+      <div style="font-size:11px;color:var(--t2);margin-top:4px">Swastik Digital Library</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:6px">v3.0 · Firebase Cloud · Owner App</div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="page" id="page-notifications">
+    <div style="font-size:13px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Due Alerts</div>
+    <div id="nList"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <button class="ni2 active" id="nav-dashboard" onclick="showPage('dashboard')"><span class="nicon">🏠</span><span class="nlbl">Home</span></button>
+    <button class="ni2" id="nav-students" onclick="showPage('students')"><span class="nicon">👥</span><span class="nlbl">Students</span></button>
+    <button class="ni2" id="nav-cabins" onclick="showPage('cabins')"><span class="nicon">🪑</span><span class="nlbl">Cabins</span></button>
+    <button class="ni2" id="nav-fees" onclick="showPage('fees')"><span class="nicon">💰</span><span class="nlbl">Fees</span></button>
+    <button class="ni2" id="nav-settings" onclick="showPage('settings')"><span class="nicon">⚙️</span><span class="nlbl">Settings</span></button>
+  </div>
+  <button class="fab" id="mFab" onclick="openAdd()">+</button>
+</div>
+
+<!-- ADD/EDIT STUDENT MODAL -->
+<div class="ov" id="addModal">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-hdr"><div class="m-title" id="addTitle">Add Student</div><button class="m-close" onclick="closeM('addModal')">✕</button></div>
+    <div class="m-body">
+      <div class="fg">
+        <label class="fl">Photo</label>
+        <div class="pua" id="pua">
+          <input type="file" accept="image/*" id="pInput" onchange="prevPhoto(event)">
+          <div id="pPh"><div class="p-ph">📷</div><div class="p-ut">Tap to upload photo</div></div>
+          <img id="pPrev" class="p-prev" style="display:none" alt="preview">
+        </div>
+      </div>
+      <div class="frow2">
+        <div class="fg"><label class="fl">Full Name *</label><input class="fi" id="fName" placeholder="Student name"></div>
+        <div class="fg"><label class="fl">Phone *</label><input class="fi" id="fPhone" type="tel" placeholder="Mobile"></div>
+      </div>
+      <div class="frow2">
+        <div class="fg"><label class="fl">Shift *</label>
+          <select class="fi fsel" id="fShift" onchange="onSC()">
+            <option value="">Select</option>
+            <option value="morning">Morning (7AM-1PM)</option>
+            <option value="evening">Evening (1PM-7PM)</option>
+            <option value="full">Full Shift (7AM-7PM)</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Cabin No *</label>
+          <select class="fi fsel" id="fCabin"><option value="">Select shift first</option></select>
+        </div>
+      </div>
+      <div class="frow2">
+        <div class="fg"><label class="fl">Join Date *</label><input class="fi" id="fJoin" type="date"></div>
+        <div class="fg"><label class="fl">Monthly Fee (₹)</label><input class="fi" id="fFee" type="number" placeholder="Auto by shift"></div>
+      </div>
+      <div class="fg"><label class="fl">Address / Notes</label><input class="fi" id="fAddr" placeholder="Optional"></div>
+      <input type="hidden" id="fEid">
+      <button class="btn b-prim" onclick="saveStu()" id="saveStuBtn">Save Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENT DETAIL MODAL -->
+<div class="ov" id="detModal">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-hdr"><div class="m-title">Student Profile</div><button class="m-close" onclick="closeM('detModal')">✕</button></div>
+    <div class="m-body" id="detBody"></div>
+  </div>
+</div>
+
+<!-- PARTIAL PAYMENT MODAL -->
+<div class="ov" id="partModal">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-hdr"><div class="m-title">💵 Partial Payment</div><button class="m-close" onclick="closeM('partModal')">✕</button></div>
+    <div class="m-body">
+      <div class="p-inf" id="pInfo"></div>
+      <div class="fg"><label class="fl">Amount Received (₹)</label><input class="fi" id="pAmt" type="number" placeholder="Enter amount"></div>
+      <button class="btn b-prim" onclick="savePartial()">Save Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEE STRUCTURE MODAL -->
+<div class="ov" id="feeModal">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-hdr"><div class="m-title">💰 Fee Structure</div><button class="m-close" onclick="closeM('feeModal')">✕</button></div>
+    <div class="m-body">
+      <div class="fg"><label class="fl">Morning Shift Fee (₹)</label><input class="fi" id="fMorn" type="number"></div>
+      <div class="fg"><label class="fl">Evening Shift Fee (₹)</label><input class="fi" id="fEve" type="number"></div>
+      <div class="fg"><label class="fl">Full Shift Fee (₹)</label><input class="fi" id="fFull" type="number"></div>
+      <button class="btn b-prim" onclick="saveFeeStr()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CABIN SETTINGS MODAL -->
+<div class="ov" id="cabinModal2">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-hdr"><div class="m-title">🪑 Cabin Settings</div><button class="m-close" onclick="closeM('cabinModal2')">✕</button></div>
+    <div class="m-body">
+      <div class="fg"><label class="fl">Total Number of Cabins</label><input class="fi" id="cabCount" type="number" placeholder="e.g. 54"></div>
+      <div style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--t2);line-height:1.8;">
+        💡 Total Slots = Cabins × 2 (Morning + Evening)<br>
+        Full Shift student = 1 cabin both shifts
+      </div>
+      <button class="btn b-prim" onclick="saveCabinSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CABIN DETAIL MODAL -->
+<div class="ov" id="cabDetModal">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-hdr"><div class="m-title" id="cabDetTitle">Cabin Detail</div><button class="m-close" onclick="closeM('cabDetModal')">✕</button></div>
+    <div class="m-body" id="cabDetBody"></div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-ov" id="confirmOv">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">❓</div>
+    <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="closeConfirm()">No</button>
+      <button class="confirm-yes" id="confirmYes">Yes</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT OPTIONS -->
+<div class="rcpt-ov" id="rcptOv">
+  <div class="rcpt-box">
+    <div class="rcpt-ico">🧾</div>
+    <div class="rcpt-ttl">Fee Receipt</div>
+    <div class="rcpt-sub" id="rcptSub">Choose how to share</div>
+    <div class="rcpt-opt">
+      <button class="rcpt-btn rcpt-btn-wa" id="rcptWaBtn" onclick="sendReceiptWA()">
+        <span style="font-size:20px">💬</span><span>Send via WhatsApp</span>
+      </button>
+      <button class="rcpt-btn rcpt-btn-print" onclick="printReceiptDoc()">
+        <span style="font-size:20px">🖨️</span><span>Print / Save as PDF</span>
+      </button>
+      <button class="rcpt-btn rcpt-btn-cancel" onclick="closeRcptOv()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE LIGHTBOX -->
+<div class="img-lb-ov" id="imgLbOv">
+  <button class="img-lb-back" onclick="closeImgLb()">←</button>
+  <div class="img-lb-label">Student Photo</div>
+  <img class="img-lb-img" id="imgLbImg" src="" alt="Student Photo">
+</div>
+
+<!-- LOADER -->
+<div class="loader-ov" id="loaderOv"><div class="loader"></div></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- SAFETY WRAPPER: defines all global onclick functions before Firebase module loads.
+     The module script below will replace these stubs with the real implementations. -->
+<script>
+var _sdlReady = false;
+var _sdlQueue = [];
+function _sdlCall(fn, args) {
+  if (_sdlReady && window['_sdl_' + fn]) {
+    window['_sdl_' + fn].apply(null, args);
+  } else {
+    _sdlQueue.push([fn, args]);
+  }
+}
+['doLogin','doLogout','showPage','goBack','toggleTheme','renderStudents','setF','setCS',
+ 'showCabDet','confirmFee','opPart','savePartial','chMon','openAdd','openAddCabin','onSC',
+ 'saveStu','prevPhoto','openDet','editStu','openWA','confirmDelStu','openM','closeM',
+ 'saveFeeStr','saveCabinSettings','exportData','importData','closeConfirm','checkInternet',
+ 'openImgLb','closeImgLb','generateReceipt','sendReceiptWA','printReceiptDoc','closeRcptOv'
+].forEach(function(fn) {
+  window[fn] = function() { _sdlCall(fn, Array.prototype.slice.call(arguments)); };
+});
+
+function checkInternet() {
+  if (navigator.onLine) {
+    document.getElementById('noInternet').style.display = 'none';
+  } else {
+    document.getElementById('noInternet').style.display = 'flex';
+  }
+}
+window.checkInternet = checkInternet;
+window.addEventListener('online', function() { document.getElementById('noInternet').style.display = 'none'; });
+window.addEventListener('offline', function() { document.getElementById('noInternet').style.display = 'flex'; });
+checkInternet();
+</script>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAeOjdqB7mAc_3apMk0duZc6ZBxTL9ce3k",
+  authDomain: "swastik-ce2c3.firebaseapp.com",
+  projectId: "swastik-ce2c3",
+  storageBucket: "swastik-ce2c3.firebasestorage.app",
+  messagingSenderId: "988909788107",
+  appId: "1:988909788107:web:f1c0b4a7d72250e01ef44e",
+  measurementId: "G-DT5J3SEZL0"
+};
+
+const fireApp = initializeApp(firebaseConfig);
+const auth = getAuth(fireApp);
+const db = getFirestore(fireApp);
+
+// GLOBALS
+var students = [];
+var settings = { fees: { morning: 350, evening: 350, full: 500 }, cabins: 54 };
+var feeRecs = {};
+var curFilter = 'all';
+var curCS = 'morning';
+var fY = new Date().getFullYear();
+var fM = new Date().getMonth();
+var prevPage = 'dashboard';
+var pSid = '', pMk = '';
+var confirmCallback = null;
+var backCount = 0;
+var backTimer = null;
+var isDark = true;
+
+var MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var M3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// LOADER
+function showLoader() { document.getElementById('loaderOv').style.display = 'flex'; }
+function hideLoader() { document.getElementById('loaderOv').style.display = 'none'; }
+
+// TOAST
+function toast2(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// MODALS
+function openM(id) {
+  document.getElementById(id).classList.add('open');
+  history.pushState({}, '');
+}
+function closeM(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// IMAGE LIGHTBOX
+function openImgLb(src) {
+  document.getElementById('imgLbImg').src = src;
+  document.getElementById('imgLbOv').classList.add('open');
+  history.pushState({}, '');
+}
+function closeImgLb() {
+  document.getElementById('imgLbOv').classList.remove('open');
+  document.getElementById('imgLbImg').src = '';
+}
+
+// CONFIRM
+function showConfirm(icon, title, msg, cb) {
+  document.getElementById('confirmIcon').textContent = icon;
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  confirmCallback = cb;
+  document.getElementById('confirmOv').classList.add('open');
+  document.getElementById('confirmYes').onclick = function() {
+    document.getElementById('confirmOv').classList.remove('open');
+    confirmCallback = null;
+    if (cb) cb();
+  };
+}
+function closeConfirm() {
+  document.getElementById('confirmOv').classList.remove('open');
+  confirmCallback = null;
+}
+
+// AUTH
+async function doLogin() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var pass = document.getElementById('loginPass').value.trim();
+  var errEl = document.getElementById('loginErr');
+  var btn = document.getElementById('loginBtn');
+  if (!email || !pass) { errEl.textContent = 'Please enter your email and password!'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'Logging in...'; btn.disabled = true;
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    errEl.style.display = 'none';
+  } catch(e) {
+    errEl.textContent = 'Wrong email or password! Try again.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Login'; btn.disabled = false;
+  }
+}
+
+function doLogout() {
+  showConfirm('🚪', 'Logout', 'Are you sure you want to logout from SDL?', async function() {
+    await signOut(auth);
+    students = []; feeRecs = {};
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+  });
+}
+
+onAuthStateChanged(auth, async function(user) {
+  if (user) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    showLoader();
+    await loadSettings();
+    await loadStudents();
+    await loadFeeRecs();
+    hideLoader();
+    initApp();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    hideLoader();
+  }
+});
+
+// FIRESTORE HELPERS
+async function loadSettings() {
+  try {
+    var snap = await getDoc(doc(db, 'sdl', 'settings'));
+    if (snap.exists()) settings = snap.data();
+  } catch(e) {}
+}
+
+async function saveSettings() {
+  try { await setDoc(doc(db, 'sdl', 'settings'), settings); } catch(e) { toast2('Save failed!'); }
+}
+
+async function loadStudents() {
+  try {
+    var snap = await getDocs(collection(db, 'students'));
+    students = [];
+    snap.forEach(function(d) { students.push(Object.assign({ docId: d.id }, d.data())); });
+  } catch(e) {}
+}
+
+async function loadFeeRecs() {
+  try {
+    var snap = await getDocs(collection(db, 'feeRecs'));
+    feeRecs = {};
+    snap.forEach(function(d) { feeRecs[d.id] = d.data(); });
+  } catch(e) {}
+}
+
+async function addStudent(data) {
+  showLoader();
+  try {
+    var ref = await addDoc(collection(db, 'students'), data);
+    data.docId = ref.id;
+    students.push(data);
+    hideLoader();
+    return true;
+  } catch(e) { hideLoader(); toast2('Save failed! Check internet.'); return false; }
+}
+
+async function updateStudent(docId, data) {
+  showLoader();
+  try {
+    await updateDoc(doc(db, 'students', docId), data);
+    var idx = students.findIndex(function(s){return s.docId===docId;});
+    if(idx>-1) students[idx] = Object.assign(students[idx], data);
+    hideLoader(); return true;
+  } catch(e) { hideLoader(); toast2('Update failed!'); return false; }
+}
+
+async function deleteStudent(docId) {
+  showLoader();
+  try {
+    await deleteDoc(doc(db, 'students', docId));
+    students = students.filter(function(s){return s.docId!==docId;});
+    hideLoader(); return true;
+  } catch(e) { hideLoader(); toast2('Delete failed!'); return false; }
+}
+
+async function saveFeeRec(key, data) {
+  try {
+    await setDoc(doc(db, 'feeRecs', key), data, {merge:true});
+    if (!feeRecs[key]) feeRecs[key] = {};
+    Object.assign(feeRecs[key], data);
+  } catch(e) { toast2('Fee save failed! Check internet.'); }
+}
+
+// EXPORT / IMPORT
+function exportData() {
+  try {
+    var data = JSON.stringify({ students: students, settings: settings, feeRecs: feeRecs, exportDate: new Date().toISOString() }, null, 2);
+    var blob = new Blob([data], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'SDL_backup_' + new Date().toISOString().split('T')[0] + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    toast2('✅ Backup exported successfully!');
+  } catch(e) { toast2('Export failed: ' + e.message); }
+}
+
+async function importData(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = async function(ev) {
+    try {
+      var imp = JSON.parse(ev.target.result);
+      if (!imp.students || !imp.settings) { toast2('Invalid backup file!'); return; }
+      showConfirm('📥','Import Backup','All existing data will be replaced. Continue?', async function() {
+        showLoader();
+        try {
+          settings = imp.settings;
+          await saveSettings();
+          for (var i = 0; i < imp.students.length; i++) {
+            var s = Object.assign({}, imp.students[i]);
+            var dId = s.docId; delete s.docId;
+            if (dId) { await setDoc(doc(db, 'students', dId), s); }
+            else { await addDoc(collection(db, 'students'), s); }
+          }
+          if (imp.feeRecs) {
+            var keys = Object.keys(imp.feeRecs);
+            for (var j = 0; j < keys.length; j++) {
+              await setDoc(doc(db, 'feeRecs', keys[j]), imp.feeRecs[keys[j]]);
+            }
+          }
+          await loadSettings(); await loadStudents(); await loadFeeRecs();
+          hideLoader();
+          toast2('✅ Data restored successfully!');
+          renderDash(); renderSettings();
+        } catch(err) { hideLoader(); toast2('Import failed: ' + err.message); }
+      });
+    } catch(err) { toast2('Could not read file: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// HELPERS
+function mk(y, m) { return y + '-' + (m < 9 ? '0' : '') + (m+1); }
+
+function getFR(stuId, key) {
+  if (!feeRecs[key]) return { status: 'unpaid', paid: 0 };
+  return feeRecs[key][stuId] || { status: 'unpaid', paid: 0 };
+}
+
+function getDueDate(joinDate, year, month) {
+  if (!joinDate) return new Date(year, month, 1);
+  var jd = new Date(joinDate);
+  var joinDay = jd.getDate();
+  var lastDay = new Date(year, month + 1, 0).getDate();
+  var dueDay = Math.min(joinDay, lastDay);
+  return new Date(year, month, dueDay);
+}
+
+function getDues() {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var y = today.getFullYear(), m = today.getMonth();
+  var key = mk(y, m);
+  var res = [];
+  students.filter(function(s){return s.active!==false;}).forEach(function(s) {
+    var r = getFR(s.docId, key);
+    if (r.status === 'paid') return;
+    var dueDate = getDueDate(s.joinDate, y, m);
+    dueDate.setHours(0,0,0,0);
+    var diff = Math.round((dueDate - today) / 86400000);
+    if (diff <= 5) res.push({ s:s, diff:diff, rem: Number(s.fee) - Number(r.paid||0) });
+  });
+  return res.sort(function(a,b){return a.diff-b.diff;});
+}
+
+function sLabel(s) { return s==='morning'?'Morning':s==='evening'?'Evening':'Full Shift'; }
+function sTag(s) {
+  var cls = s==='morning'?'tag-m':s==='evening'?'tag-e':'tag-f';
+  return '<span class="'+cls+'">'+sLabel(s)+'</span>';
+}
+function clrs() { return ['#FF6B00','#2979FF','#AA00FF','#00C853','#FF3D3D','#FFD600']; }
+function ava(s, sz) {
+  var r = '50%';
+  if (s.photo) return '<img src="'+s.photo+'" style="width:'+sz+'px;height:'+sz+'px;border-radius:'+r+';object-fit:cover;object-position:center top;flex-shrink:0;border:2px solid var(--bdr2);" alt="">';
+  var cs = clrs();
+  var bg = cs[(s.docId||'x').charCodeAt(0) % cs.length] || '#FF6B00';
+  var ini = s.name ? s.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase() : '?';
+  return '<div style="width:'+sz+'px;height:'+sz+'px;border-radius:'+r+';background:'+bg+'22;color:'+bg+';display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:'+Math.round(sz/3)+'px;flex-shrink:0;border:2px solid '+bg+'44;">'+ini+'</div>';
+}
+function activeStu() { return students.filter(function(s){return s.active!==false;}); }
+
+// INIT APP
+function initApp() {
+  var dark = localStorage.getItem('sdl_theme');
+  isDark = dark !== 'light';
+  document.body.classList.toggle('light', !isDark);
+  document.getElementById('themeToggle').checked = !isDark;
+  renderDash();
+  updNdot();
+  setupBackButton();
+}
+
+// BACK BUTTON
+function setupBackButton() {
+  history.pushState({ page: 'dashboard' }, '');
+  window.addEventListener('popstate', function(e) {
+    var activePage = (document.querySelector('.page.active')||{id:'page-dashboard'}).id.replace('page-','');
+    var openModal = document.querySelector('.ov.open');
+    if (openModal) { openModal.classList.remove('open'); history.pushState({}, ''); return; }
+    var openConfirm = document.querySelector('.confirm-ov.open');
+    if (openConfirm) { openConfirm.classList.remove('open'); history.pushState({}, ''); return; }
+    if (activePage !== 'dashboard') {
+      showPage('dashboard');
+      history.pushState({}, '');
+    } else {
+      if (backCount === 0) {
+        backCount = 1;
+        toast2('Press back again to exit');
+        backTimer = setTimeout(function(){ backCount = 0; }, 2000);
+      } else {
+        clearTimeout(backTimer);
+        if (typeof Android !== 'undefined') { Android.exitApp(); }
+        else { history.back(); }
+      }
+    }
+  });
+}
+
+// NAVIGATION
+function showPage(name) {
+  prevPage = (document.querySelector('.page.active')||{id:'page-dashboard'}).id.replace('page-','');
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.ni2').forEach(function(n){n.classList.remove('active');});
+  var pg = document.getElementById('page-'+name);
+  if (pg) pg.classList.add('active');
+  var nv = document.getElementById('nav-'+name);
+  if (nv) nv.classList.add('active');
+  var back = document.getElementById('tbBack'), logo = document.getElementById('tbLogo'), tt = document.getElementById('tbTitle'), fab = document.getElementById('mFab');
+  var noB = ['dashboard','students','cabins','fees','settings'];
+  if (noB.indexOf(name) === -1) {
+    back.classList.add('show'); logo.style.display='none'; tt.style.display='block';
+    tt.textContent = name==='notifications'?'Notifications':'';
+  } else {
+    back.classList.remove('show'); logo.style.display='block'; tt.style.display='none';
+  }
+  fab.style.display = (name==='students'||name==='dashboard') ? 'flex' : 'none';
+  history.pushState({ page: name }, '');
+  if (name==='dashboard') renderDash();
+  if (name==='students') renderStudents();
+  if (name==='cabins') renderCab();
+  if (name==='fees') renderFees();
+  if (name==='settings') renderSettings();
+  if (name==='notifications') renderNotif();
+  window.scrollTo(0,0);
+}
+
+function goBack() { showPage(prevPage||'dashboard'); }
+
+// THEME
+function toggleTheme() {
+  isDark = !document.getElementById('themeToggle').checked;
+  document.body.classList.toggle('light', !isDark);
+  localStorage.setItem('sdl_theme', isDark ? 'dark' : 'light');
+  toast2(isDark ? '🌙 Dark mode on' : '☀️ Light mode on');
+}
+
+// DASHBOARD
+function renderDash() {
+  var now = new Date(), h = now.getHours();
+  document.getElementById('dDate').textContent = now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('dGreet').textContent = h<12?'Morning':h<17?'Afternoon':'Evening';
+  var stus = activeStu(), key = mk(now.getFullYear(), now.getMonth()), col = 0;
+  stus.forEach(function(s){var r=getFR(s.docId,key);col+=Number(r.paid||0);});
+  document.getElementById('st1').textContent = stus.length;
+  document.getElementById('st2').textContent = '₹'+col.toLocaleString('en-IN');
+  document.getElementById('st3').textContent = getDues().length;
+  var occ = 0; stus.forEach(function(s){occ+=s.shift==='full'?2:1;});
+  document.getElementById('st4').textContent = occ+'/'+(settings.cabins*2);
+  var dues = getDues(), dl = document.getElementById('dueList');
+  if (!dues.length) {
+    dl.innerHTML = '<div class="empty"><div class="e-ico">✅</div><div class="e-txt">No dues right now!</div></div>';
+  } else {
+    dl.innerHTML = dues.slice(0,6).map(function(d){
+      var cls = d.diff<0?'b-red':d.diff===0?'b-orange':'b-blue';
+      var txt = d.diff<0?Math.abs(d.diff)+'d overdue':d.diff===0?'Due today':'In '+d.diff+'d';
+      return '<div class="ditem" onclick="openDet(\''+d.s.docId+'\')">'+ava(d.s,40)+'<div class="d-info"><div class="d-name">'+d.s.name+'</div><div class="d-meta">Cabin '+d.s.cabin+' · ₹'+d.rem+' pending</div></div><span class="badge '+cls+'">'+txt+'</span></div>';
+    }).join('');
+  }
+  var tot = stus.reduce(function(a,s){return a+s.fee;},0), pct = tot>0?Math.round(col/tot*100):0, pen = tot-col;
+  document.getElementById('dRep').innerHTML =
+    '<div class="rrow"><div class="r-lbl">Collected</div><div class="r-track"><div class="r-fill" style="width:'+pct+'%;background:var(--green)"></div></div><div class="r-val" style="color:var(--green)">₹'+col.toLocaleString('en-IN')+'</div></div>'+
+    '<div class="rrow"><div class="r-lbl">Pending</div><div class="r-track"><div class="r-fill" style="width:'+(100-pct)+'%;background:var(--red)"></div></div><div class="r-val" style="color:var(--red)">₹'+pen.toLocaleString('en-IN')+'</div></div>'+
+    '<div style="font-size:11px;color:var(--t2);margin-top:6px">'+M3[now.getMonth()]+' '+now.getFullYear()+' · '+pct+'% collected</div>';
+  updNdot();
+}
+
+// STUDENTS
+function renderStudents() {
+  var q = (document.getElementById('sInput').value||'').toLowerCase();
+  var key = mk(new Date().getFullYear(), new Date().getMonth());
+  var list = activeStu();
+  if (q) list = list.filter(function(s){return s.name.toLowerCase().indexOf(q)>-1||String(s.cabin).indexOf(q)>-1||(s.phone&&s.phone.indexOf(q)>-1);});
+  if (curFilter==='morning') list=list.filter(function(s){return s.shift==='morning';});
+  else if(curFilter==='evening') list=list.filter(function(s){return s.shift==='evening';});
+  else if(curFilter==='full') list=list.filter(function(s){return s.shift==='full';});
+  else if(curFilter==='due') list=list.filter(function(s){return getFR(s.docId,key).status!=='paid';});
+  else if(curFilter==='paid') list=list.filter(function(s){return getFR(s.docId,key).status==='paid';});
+  var el = document.getElementById('stuList');
+  if(!list.length){el.innerHTML='<div class="empty"><div class="e-ico">👨‍🎓</div><div class="e-txt">No students found.<br>Tap + to add!</div></div>';return;}
+  el.innerHTML = list.map(function(s){
+    var r=getFR(s.docId,key);
+    var fb=r.status==='paid'?'<span class="badge b-green">✅ Paid</span>':r.status==='partial'?'<span class="badge b-yellow">₹'+(r.paid||0)+' Partial</span>':'<span class="badge b-red">⚠️ Unpaid</span>';
+    return '<div class="stucard" onclick="openDet(\''+s.docId+'\')">'+ava(s,52)+'<div class="stu-info"><div class="stu-name">'+s.name+'</div><div class="stu-meta">📞 '+(s.phone||'—')+' · 🪑 Cabin '+s.cabin+'</div><div class="stu-tags">'+sTag(s.shift)+'</div></div><div class="stu-right"><span style="font-size:13px;font-weight:700;">₹'+s.fee+'/mo</span>'+fb+'</div></div>';
+  }).join('');
+}
+
+function setF(el,f) { curFilter=f; document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');}); el.classList.add('active'); renderStudents(); }
+
+// CABINS
+function getOM(sh) {
+  var m={};
+  activeStu().forEach(function(s){if(s.shift==='full'||s.shift===sh)m[s.cabin]=s;});
+  return m;
+}
+function getFS() {
+  var s={};
+  activeStu().forEach(function(s2){if(s2.shift==='full')s[s2.cabin]=true;});
+  return s;
+}
+
+function renderCab() {
+  var totalCabins = settings.cabins || 54;
+  var occ=getOM(curCS), full=getFS(), free=0, occC=0, html='';
+  for(var i=1;i<=totalCabins;i++){
+    var iF=full[i],isO=!!occ[i],cls,ic;
+    if(iF){cls='full';ic='●';occC++;}
+    else if(isO){cls='occ';ic='●';occC++;}
+    else{cls='free';ic='';free++;}
+    html+='<div class="cc '+cls+'" onclick="showCabDet('+i+')"><div class="c-num">'+i+'</div><div class="c-ico">'+ic+'</div></div>';
+  }
+  document.getElementById('cGrid').innerHTML=html;
+  document.getElementById('cSum').innerHTML='<div class="igrid"><div class="icell"><div class="i-lbl">Total</div><div class="i-val">'+totalCabins+'</div></div><div class="icell"><div class="i-lbl">Occupied</div><div class="i-val" style="color:var(--red)">'+occC+'</div></div><div class="icell"><div class="i-lbl">Free</div><div class="i-val" style="color:var(--green)">'+free+'</div></div><div class="icell"><div class="i-lbl">Full Shift</div><div class="i-val" style="color:var(--orange)">'+Object.keys(full).length+'</div></div></div>';
+}
+
+function setCS(s){curCS=s;document.getElementById('csMorn').classList.toggle('active',s==='morning');document.getElementById('csEve').classList.toggle('active',s==='evening');renderCab();}
+
+function showCabDet(n) {
+  var occ=getOM(curCS),s=occ[n];
+  document.getElementById('cabDetTitle').textContent='🪑 Cabin '+n;
+  if(!s){
+    document.getElementById('cabDetBody').innerHTML='<div class="empty"><div class="e-ico">✅</div><div class="e-txt">Cabin '+n+' is free!</div></div><button class="btn b-prim" onclick="closeM(\'cabDetModal\');openAddCabin('+n+')">+ Assign Student</button>';
+  } else {
+    document.getElementById('cabDetBody').innerHTML='<div style="text-align:center;margin-bottom:14px">'+ava(s,72)+'<div style="font-size:18px;font-weight:800;margin-top:10px">'+s.name+'</div><div style="font-size:12px;color:var(--t2)">'+sLabel(s.shift)+' · ₹'+s.fee+'/mo</div></div><div class="igrid"><div class="icell"><div class="i-lbl">Phone</div><div class="i-val" style="font-size:13px">'+(s.phone||'—')+'</div></div><div class="icell"><div class="i-lbl">Joined</div><div class="i-val" style="font-size:13px">'+(s.joinDate||'—')+'</div></div></div><button class="btn b-prim" onclick="closeM(\'cabDetModal\');openDet(\''+s.docId+'\')">View Profile</button>';
+  }
+  openM('cabDetModal');
+}
+
+// FEES
+function renderFees() {
+  var key=mk(fY,fM);
+  document.getElementById('fMon').textContent=MN[fM]+' '+fY;
+  var stus=activeStu(),tot=0,col=0;
+  stus.forEach(function(s){tot+=Number(s.fee);var r=getFR(s.docId,key);col+=Number(r.paid||0);});
+  var pen=tot-col;
+  document.getElementById('fTot').textContent='₹'+tot.toLocaleString('en-IN');
+  document.getElementById('fCol').textContent='₹'+col.toLocaleString('en-IN');
+  document.getElementById('fPen').textContent='₹'+pen.toLocaleString('en-IN');
+  if(!stus.length){document.getElementById('fList').innerHTML='<div class="empty"><div class="e-ico">👥</div><div class="e-txt">No students yet.</div></div>';return;}
+  document.getElementById('fList').innerHTML=stus.map(function(s){
+    var r=getFR(s.docId,key),ip=r.status==='paid',ipt=r.status==='partial',pa=r.paid||0,rem=s.fee-pa;
+    var dueDate=getDueDate(s.joinDate,fY,fM);
+    var dueTxt=dueDate.getDate()+' '+M3[dueDate.getMonth()];
+    var sb=ip?'<span class="badge b-green">✅ Paid</span>':ipt?'<span class="badge b-yellow">₹'+pa+'/₹'+s.fee+'</span>':'<span class="badge b-red">Unpaid</span>';
+    var pb=ip?'<button class="fbtn b-unpay" onclick="confirmFee(\''+s.docId+'\',\''+key+'\',\'unpaid\')">✓ Paid</button>':'<button class="fbtn b-pay" onclick="confirmFee(\''+s.docId+'\',\''+key+'\',\'paid\')">Mark Paid</button>';
+    var ptb=!ip?'<button class="fbtn b-part" onclick="opPart(\''+s.docId+'\',\''+key+'\')">Partial</button>':'';
+    return '<div class="frow">'+ava(s,40)+'<div class="f-info"><div class="f-name">'+s.name+'</div><div class="f-meta">Cabin '+s.cabin+' · '+sLabel(s.shift)+'</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Due: '+dueTxt+(ipt?' · Remaining: ₹'+rem:'')+'</div></div><div class="f-right"><div class="f-amt">₹'+s.fee+'</div><div class="fbtns">'+pb+ptb+'</div>'+sb+'</div></div>';
+  }).join('');
+}
+
+function confirmFee(sid, key, status) {
+  var s = students.find(function(x){return x.docId===sid;});
+  var icon = status==='paid'?'✅':'❌';
+  var msg = status==='paid'?'Mark '+s.name+'\'s fee as Paid for this month?':'Mark '+s.name+'\'s fee as Unpaid?';
+  showConfirm(icon, status==='paid'?'Mark as Paid':'Mark as Unpaid', msg, async function() {
+    var pa = status==='paid' ? Number(s.fee) : 0;
+    var rec = {}; rec[sid] = { status:status, paid:pa };
+    await saveFeeRec(key, rec);
+    renderFees(); renderDash(); renderNotif();
+    toast2(status==='paid'?'✅ Fee marked paid!':'⬜ Fee marked unpaid');
+  });
+}
+
+function opPart(sid,key) {
+  pSid=sid; pMk=key;
+  var s=students.find(function(x){return x.docId===sid;}),r=getFR(sid,key),pa=r.paid||0,rem=s.fee-pa,pct=Math.round(pa/s.fee*100);
+  document.getElementById('pInfo').innerHTML='<div class="p-row"><span class="p-lbl">Student</span><span class="p-val">'+s.name+'</span></div><div class="p-row"><span class="p-lbl">Total Fee</span><span class="p-val">₹'+s.fee+'</span></div><div class="p-row"><span class="p-lbl">Already Paid</span><span class="p-val" style="color:var(--green)">₹'+pa+'</span></div><div class="p-row"><span class="p-lbl">Remaining</span><span class="p-val" style="color:var(--red)">₹'+rem+'</span></div><div class="pb-w"><div class="pb-f" style="width:'+pct+'%"></div></div>';
+  document.getElementById('pAmt').value='';
+  openM('partModal');
+}
+
+async function savePartial() {
+  var amt=parseInt(document.getElementById('pAmt').value)||0;
+  if(amt<=0){toast2('Please enter a valid amount!');return;}
+  var s=students.find(function(x){return x.docId===pSid;}),r=getFR(pSid,pMk),tp=Number(r.paid||0)+amt;
+  var rec={};
+  if(tp>=Number(s.fee)){rec[pSid]={status:'paid',paid:Number(s.fee)};toast2('✅ Full fee paid!');}
+  else{rec[pSid]={status:'partial',paid:tp};toast2('💵 ₹'+tp+' recorded. ₹'+(Number(s.fee)-tp)+' remaining.');}
+  await saveFeeRec(pMk,rec);
+  closeM('partModal'); renderFees(); renderDash(); renderNotif();
+}
+
+function chMon(d){fM+=d;if(fM>11){fM=0;fY++;}if(fM<0){fM=11;fY--;}renderFees();}
+
+// ADD STUDENT
+function openAdd() {
+  document.getElementById('addTitle').textContent='Add Student';
+  document.getElementById('fName').value='';
+  document.getElementById('fPhone').value='';
+  document.getElementById('fShift').value='';
+  document.getElementById('fCabin').innerHTML='<option value="">Select shift first</option>';
+  document.getElementById('fJoin').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fFee').value='';
+  document.getElementById('fAddr').value='';
+  document.getElementById('fEid').value='';
+  document.getElementById('pPrev').style.display='none';
+  document.getElementById('pPh').style.display='block';
+  openM('addModal');
+}
+
+function openAddCabin(n) {
+  openAdd();
+  setTimeout(function(){
+    document.getElementById('fShift').value=curCS;
+    onSC();
+    setTimeout(function(){document.getElementById('fCabin').value=n;},120);
+  },320);
+}
+
+function onSC() {
+  var sh=document.getElementById('fShift').value,eid=document.getElementById('fEid').value;
+  var fm={morning:settings.fees.morning,evening:settings.fees.evening,full:settings.fees.full};
+  if(fm[sh]) document.getElementById('fFee').value=fm[sh];
+  if(!sh) return;
+  var totalCabins=settings.cabins||54;
+  var occ=getOM(sh),full=getFS();
+  var currentCabin=eid?(students.find(function(s){return s.docId===eid;})||{}).cabin:0;
+  var opts='<option value="">Choose cabin</option>';
+  for(var i=1;i<=totalCabins;i++){
+    var bl=full[i]&&(!eid||currentCabin!==i);
+    var tk=occ[i]&&(!eid||occ[i].docId!==eid);
+    var fb=sh==='full'&&occ[i]&&(occ[i].shift==='morning'||occ[i].shift==='evening');
+    if(!bl&&!tk&&!fb){opts+='<option value="'+i+'">Cabin '+i+'</option>';}
+    else if(eid&&currentCabin===i){opts+='<option value="'+i+'" selected>Cabin '+i+' (current)</option>';}
+  }
+  document.getElementById('fCabin').innerHTML=opts;
+  if(eid&&currentCabin) document.getElementById('fCabin').value=currentCabin;
+}
+
+async function saveStu() {
+  var name=document.getElementById('fName').value.trim();
+  var phone=document.getElementById('fPhone').value.trim();
+  var shift=document.getElementById('fShift').value;
+  var cabin=parseInt(document.getElementById('fCabin').value);
+  var joinDate=document.getElementById('fJoin').value;
+  var fee=parseInt(document.getElementById('fFee').value)||settings.fees[shift]||350;
+  var addr=document.getElementById('fAddr').value.trim();
+  var eid=document.getElementById('fEid').value;
+  var photo=null;
+  var pp=document.getElementById('pPrev');
+  if(pp.style.display!=='none'&&pp.src&&pp.src.indexOf('data:')===0) photo=pp.src;
+  if(!name||!shift||!cabin){toast2('Please fill in Name, Shift, and Cabin!');return;}
+  var data={name:name,phone:phone,shift:shift,cabin:cabin,joinDate:joinDate,fee:fee,address:addr,active:true};
+  if(photo) data.photo=photo;
+  var btn=document.getElementById('saveStuBtn');
+  btn.textContent='Saving...'; btn.disabled=true;
+  if(eid){
+    var ok=await updateStudent(eid,data);
+    if(ok){closeM('addModal');renderStudents();renderDash();renderCab();toast2('✅ Student updated!');}
+  } else {
+    var ok2=await addStudent(data);
+    if(ok2){closeM('addModal');renderStudents();renderDash();renderCab();toast2('✅ Student added!');}
+  }
+  btn.textContent='Save Student'; btn.disabled=false;
+}
+
+function prevPhoto(e) {
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas'),sz=300;
+      canvas.width=sz;canvas.height=sz;
+      var ctx=canvas.getContext('2d'),ratio=Math.max(sz/img.width,sz/img.height);
+      var w=img.width*ratio,h=img.height*ratio;
+      ctx.drawImage(img,(sz-w)/2,0,w,h);
+      var data=canvas.toDataURL('image/jpeg',0.6);
+      document.getElementById('pPrev').src=data;
+      document.getElementById('pPrev').style.display='block';
+      document.getElementById('pPh').style.display='none';
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// STUDENT DETAIL
+function openDet(docId) {
+  var s=students.find(function(x){return x.docId===docId;});
+  if(!s) return;
+  var now=new Date(),key=mk(now.getFullYear(),now.getMonth()),rec=getFR(s.docId,key);
+  var hist='';
+  for(var i=0;i<6;i++){
+    var d=new Date();d.setMonth(d.getMonth()-i);
+    var k=mk(d.getFullYear(),d.getMonth()),r=getFR(s.docId,k),pa=r.paid||0;
+    var dueDate=getDueDate(s.joinDate,d.getFullYear(),d.getMonth());
+    var badge=r.status==='paid'?'<span class="badge b-green">Paid</span>':r.status==='partial'?'<span class="badge b-yellow">₹'+pa+' Partial</span>':'<span class="badge b-red">Unpaid</span>';
+    hist+='<div class="fhi"><span>'+M3[d.getMonth()]+' '+d.getFullYear()+'</span><span>Due: '+dueDate.getDate()+'</span><span style="font-weight:700">₹'+s.fee+'</span>'+badge+'</div>';
+  }
+  var wa=s.phone?'<button class="btn b-sec" style="flex:1" onclick="openWA(\''+s.phone+'\',\''+s.name+'\','+s.fee+')">💬 WA</button>':'';
+  var avaHtml = s.photo
+    ? '<span onclick="openImgLb(\''+s.photo.replace(/'/g,"\\'")+'\')" class="img-lb-clickable" style="display:inline-block;">'+ava(s,80)+'</span>'
+    : ava(s,80);
+  document.getElementById('detBody').innerHTML=
+    '<div class="det-hdr">'+avaHtml+
+    '<div style="font-size:20px;font-weight:800;color:white;margin-top:10px">'+s.name+'</div>'+
+    '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px">'+(s.phone||'')+' '+(s.address?'· '+s.address:'')+'</div>'+
+    '<div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap">'+sTag(s.shift)+'<span class="badge b-orange">Cabin '+s.cabin+'</span></div></div>'+
+    '<div class="igrid">'+
+    '<div class="icell"><div class="i-lbl">Monthly Fee</div><div class="i-val" style="color:var(--orange)">₹'+s.fee+'</div></div>'+
+    '<div class="icell"><div class="i-lbl">Join Date</div><div class="i-val" style="font-size:12px">'+(s.joinDate||'—')+'</div></div>'+
+    '<div class="icell"><div class="i-lbl">This Month</div><div class="i-val"><span class="badge '+(rec.status==='paid'?'b-green':rec.status==='partial'?'b-yellow':'b-red')+'">'+(rec.status==='paid'?'Paid':rec.status==='partial'?'Partial':'Unpaid')+'</span></div></div>'+
+    '<div class="icell"><div class="i-lbl">Due Date</div><div class="i-val" style="font-size:12px">'+getDueDate(s.joinDate,now.getFullYear(),now.getMonth()).getDate()+' of month</div></div>'+
+    '</div>'+
+    '<div class="card" style="margin-bottom:12px"><div class="ctitle">📅 Fee History</div>'+hist+'</div>'+
+    '<div class="arow" style="flex-wrap:wrap">'+
+    '<button class="btn b-prim" style="flex:1;min-width:80px" onclick="editStu(\''+s.docId+'\')">✏️ Edit</button>'+
+    '<button class="btn b-sec" style="flex:1;min-width:80px" onclick="generateReceipt(\''+s.docId+'\')">🧾 Receipt</button>'+
+    wa+
+    '<button class="btn b-dang" style="flex:1;min-width:80px;margin-top:0" onclick="confirmDelStu(\''+s.docId+'\')">🗑️ Delete</button>'+
+    '</div>';
+  openM('detModal');
+}
+
+function editStu(docId) {
+  var s=students.find(function(x){return x.docId===docId;});
+  if(!s) return;
+  closeM('detModal');
+  setTimeout(function(){
+    document.getElementById('addTitle').textContent='Edit Student';
+    document.getElementById('fName').value=s.name;
+    document.getElementById('fPhone').value=s.phone||'';
+    document.getElementById('fShift').value=s.shift;
+    document.getElementById('fJoin').value=s.joinDate||'';
+    document.getElementById('fFee').value=s.fee;
+    document.getElementById('fAddr').value=s.address||'';
+    document.getElementById('fEid').value=s.docId;
+    if(s.photo){
+      document.getElementById('pPrev').src=s.photo;
+      document.getElementById('pPrev').style.display='block';
+      document.getElementById('pPh').style.display='none';
+    } else {
+      document.getElementById('pPrev').style.display='none';
+      document.getElementById('pPh').style.display='block';
+    }
+    onSC();
+    openM('addModal');
+  },320);
+}
+
+function openWA(phone, name, fee) {
+  var now = new Date();
+  var monthName = MN[now.getMonth()] + ' ' + now.getFullYear();
+  var msg = encodeURIComponent(
+    'Dear ' + name + ',\n\n' +
+    '📚 *Swastik Digital Library — Fee Reminder*\n\n' +
+    'This is a gentle reminder that your monthly seat fee of *₹' + fee + '* for *' + monthName + '* is currently due.\n\n' +
+    'Kindly make the payment at your earliest convenience to avoid any disruption to your seat.\n\n' +
+    'Thank you for being a valued member of SDL! 🙏\n' +
+    '— Swastik Digital Library'
+  );
+  window.open('https://wa.me/91' + String(phone).replace(/\D/g,'') + '?text=' + msg, '_blank');
+}
+
+function confirmDelStu(docId) {
+  var s = students.find(function(x){return x.docId===docId;});
+  if(!s) return;
+  showConfirm('🗑️', 'Delete Student', s.name + ' will be permanently deleted. This action cannot be undone.', async function() {
+    var ok = await deleteStudent(docId);
+    if(ok) { closeM('detModal'); renderStudents(); renderDash(); renderCab(); toast2('🗑️ Student deleted!'); }
+  });
+}
+
+// SETTINGS
+function renderSettings() {
+  var fs = settings.fees || { morning: 350, evening: 350, full: 500 };
+  document.getElementById('feeDesc').textContent = '₹' + fs.morning + ' M / ₹' + fs.evening + ' E / ₹' + fs.full + ' F';
+  document.getElementById('cabDesc').textContent = (settings.cabins || 54) + ' total cabins';
+  document.getElementById('fMorn').value = fs.morning;
+  document.getElementById('fEve').value = fs.evening;
+  document.getElementById('fFull').value = fs.full;
+  document.getElementById('cabCount').value = settings.cabins || 54;
+  var stus = activeStu();
+  var col = 0, key = mk(new Date().getFullYear(), new Date().getMonth());
+  stus.forEach(function(s){ col += Number(getFR(s.docId, key).paid || 0); });
+  var tot = stus.reduce(function(a,s){return a+Number(s.fee);},0);
+  document.getElementById('libStats').innerHTML =
+    '<div class="fhi"><span>Total Students</span><span style="font-weight:700">' + stus.length + '</span></div>' +
+    '<div class="fhi"><span>This Month Collected</span><span style="font-weight:700;color:var(--green)">₹' + col.toLocaleString('en-IN') + '</span></div>' +
+    '<div class="fhi"><span>This Month Pending</span><span style="font-weight:700;color:var(--red)">₹' + (tot-col).toLocaleString('en-IN') + '</span></div>' +
+    '<div class="fhi"><span>Total Cabins</span><span style="font-weight:700">' + (settings.cabins||54) + '</span></div>' +
+    '<div class="fhi"><span>Total Cabin Slots</span><span style="font-weight:700">' + ((settings.cabins||54)*2) + '</span></div>';
+}
+
+async function saveFeeStr() {
+  var m = parseInt(document.getElementById('fMorn').value) || 350;
+  var e = parseInt(document.getElementById('fEve').value) || 350;
+  var f = parseInt(document.getElementById('fFull').value) || 500;
+  settings.fees = { morning: m, evening: e, full: f };
+  await saveSettings();
+  closeM('feeModal');
+  renderSettings();
+  toast2('✅ Fee structure saved!');
+}
+
+async function saveCabinSettings() {
+  var c = parseInt(document.getElementById('cabCount').value) || 54;
+  settings.cabins = c;
+  await saveSettings();
+  closeM('cabinModal2');
+  renderSettings();
+  renderCab();
+  toast2('✅ Cabin settings saved!');
+}
+
+// NOTIFICATIONS
+function renderNotif() {
+  var dues = getDues();
+  var nl = document.getElementById('nList');
+  var today = new Date();
+  var key = mk(today.getFullYear(), today.getMonth());
+  if (!dues.length) {
+    nl.innerHTML = '<div class="empty"><div class="e-ico">✅</div><div class="e-txt">No dues right now!<br>All students are up to date.</div></div>';
+    return;
+  }
+  nl.innerHTML = dues.map(function(d) {
+    var cls = d.diff < 0 ? 'b-red' : d.diff === 0 ? 'b-orange' : 'b-blue';
+    var txt = d.diff < 0 ? Math.abs(d.diff) + 'd overdue' : d.diff === 0 ? 'Due today' : 'In ' + d.diff + 'd';
+    return '<div class="ditem" onclick="openDet(\'' + d.s.docId + '\')">' + ava(d.s, 44) +
+      '<div class="d-info"><div class="d-name">' + d.s.name + '</div>' +
+      '<div class="d-meta">Cabin ' + d.s.cabin + ' · ₹' + d.rem + ' pending · ' + sLabel(d.s.shift) + '</div>' +
+      '<div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">' +
+      '<button class="fbtn b-pay" onclick="confirmFee(\'' + d.s.docId + '\',\'' + key + '\',\'paid\')">✅ Mark Paid</button>' +
+      '<button class="fbtn b-part" onclick="opPart(\'' + d.s.docId + '\',\'' + key + '\')">💵 Partial</button>' +
+      '</div></div>' +
+      '<span class="badge ' + cls + '" style="align-self:flex-start">' + txt + '</span></div>';
+  }).join('');
+}
+
+function updNdot() {
+  var n = getDues().filter(function(d){ return d.diff <= 0; }).length;
+  var dot = document.getElementById('ndot');
+  if (n > 0) dot.classList.add('show');
+  else dot.classList.remove('show');
+}
+
+// RECEIPT GENERATOR
+var _rcptDocId = '', _rcptMonthKey = '';
+
+function _buildReceiptData(docId, monthKey) {
+  var s = students.find(function(x){return x.docId===docId;});
+  if (!s) return null;
+  var key = monthKey || mk(new Date().getFullYear(), new Date().getMonth());
+  var r = getFR(s.docId, key);
+  var parts = key.split('-');
+  var yr = parseInt(parts[0]), mn = parseInt(parts[1]) - 1;
+  var monthName = MN[mn] + ' ' + yr;
+  var receiptNo = 'SDL-' + key.replace('-','') + '-' + (docId||'').slice(-4).toUpperCase();
+  var dateStr = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  var paidAmt = Number(r.paid || 0);
+  return { s:s, r:r, key:key, monthName:monthName, receiptNo:receiptNo, dateStr:dateStr, paidAmt:paidAmt };
+}
+
+function generateReceipt(docId, monthKey) {
+  var d = _buildReceiptData(docId, monthKey);
+  if (!d) return;
+  _rcptDocId = docId;
+  _rcptMonthKey = monthKey || mk(new Date().getFullYear(), new Date().getMonth());
+  var hasPhone = !!(d.s.phone);
+  document.getElementById('rcptSub').textContent = d.s.name + ' · ' + d.monthName;
+  document.getElementById('rcptWaBtn').style.display = hasPhone ? 'flex' : 'none';
+  document.getElementById('rcptOv').classList.add('open');
+  history.pushState({}, '');
+}
+
+function closeRcptOv() {
+  document.getElementById('rcptOv').classList.remove('open');
+}
+
+function sendReceiptWA() {
+  var d = _buildReceiptData(_rcptDocId, _rcptMonthKey);
+  if (!d) return;
+  var s = d.s, r = d.r, paidAmt = d.paidAmt;
+  var statusTxt = r.status==='paid' ? '✅ PAID IN FULL' : r.status==='partial' ? '⚠️ PARTIAL PAYMENT' : '❌ UNPAID';
+  var balanceLine = r.status==='partial' ? '\n💸 *Balance Due:* ₹' + (Number(s.fee)-paidAmt).toLocaleString('en-IN') : '';
+  var msg =
+    '📚 *SWASTIK DIGITAL LIBRARY*\n' +
+    '_Fee Payment Receipt_\n\n' +
+    '📄 *Receipt No:* ' + d.receiptNo + '\n' +
+    '📅 *Date:* ' + d.dateStr + '\n' +
+    '─────────────────────\n' +
+    '👤 *Student:* ' + s.name + '\n' +
+    '🪑 *Cabin No:* ' + s.cabin + '\n' +
+    '⏰ *Shift:* ' + sLabel(s.shift) + '\n' +
+    '📆 *Month:* ' + d.monthName + '\n' +
+    '─────────────────────\n' +
+    '💰 *Monthly Fee:* ₹' + Number(s.fee).toLocaleString('en-IN') + '\n' +
+    '💵 *Amount Paid:* ₹' + paidAmt.toLocaleString('en-IN') + '\n' +
+    '📊 *Status:* ' + statusTxt +
+    balanceLine + '\n' +
+    '─────────────────────\n' +
+    '_Thank you for choosing SDL!_ 🙏\n' +
+    '_— Swastik Digital Library_';
+  closeRcptOv();
+  window.open('https://wa.me/91' + String(s.phone).replace(/\D/g,'') + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function printReceiptDoc() {
+  var d = _buildReceiptData(_rcptDocId, _rcptMonthKey);
+  if (!d) return;
+  var s = d.s, r = d.r, paidAmt = d.paidAmt;
+  var statusTxt = r.status==='paid'?'PAID IN FULL':r.status==='partial'?'PARTIAL PAYMENT':'UNPAID';
+  var statusCls = r.status==='paid'?'status-paid':r.status==='partial'?'status-partial':'status-unpaid';
+  var balanceRow = r.status==='partial'
+    ? '<div class="r-row"><span class="r-lbl">Balance Due</span><span class="r-val" style="color:#c62828;">₹'+(Number(s.fee)-paidAmt).toLocaleString('en-IN')+'</span></div>'
+    : '';
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fee Receipt - '+s.name+'</title>'+
+    '<style>body{font-family:Segoe UI,Arial,sans-serif;margin:0;padding:20px;background:#f4f4f4;}'+
+    '.receipt{max-width:400px;margin:0 auto;border:2px solid #FF6B00;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.12);}'+
+    '.r-head{background:linear-gradient(135deg,#1a0800,#3d1800);color:white;padding:24px 20px;text-align:center;}'+
+    '.r-logo{font-size:30px;font-weight:900;color:#FF6B00;letter-spacing:0.1em;}'+
+    '.r-sub{font-size:10px;color:rgba(255,255,255,0.55);letter-spacing:0.2em;margin-top:3px;text-transform:uppercase;}'+
+    '.r-rtitle{font-size:13px;font-weight:600;color:rgba(255,255,255,0.75);margin-top:14px;text-transform:uppercase;letter-spacing:0.1em;}'+
+    '.r-rno{font-size:11px;color:rgba(255,107,0,0.85);margin-top:4px;}'+
+    '.r-body{padding:20px;}'+
+    '.r-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}'+
+    '.r-row:last-child{border-bottom:none;}.r-lbl{color:#777;font-weight:500;}.r-val{font-weight:700;color:#1a1a1a;}'+
+    '.r-amt{background:#fff8f3;border-radius:12px;padding:18px;text-align:center;margin:16px 0;border:1px solid #ffe0c0;}'+
+    '.r-amt-lbl{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:0.1em;}'+
+    '.r-amt-val{font-size:34px;font-weight:900;color:#FF6B00;margin-top:4px;}'+
+    '.r-status{display:inline-block;padding:5px 16px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.05em;margin-top:10px;}'+
+    '.status-paid{background:#e8f5e9;color:#2e7d32;}.status-partial{background:#fff8e1;color:#f57f17;}.status-unpaid{background:#fce4ec;color:#c62828;}'+
+    '.r-sign{margin-top:24px;padding-top:16px;border-top:1px dashed #ddd;display:flex;justify-content:space-between;font-size:10px;color:#aaa;}'+
+    '.r-footer{background:#fafafa;border-top:1px solid #f0f0f0;padding:12px 20px;text-align:center;font-size:10px;color:#aaa;}'+
+    '@media print{body{padding:0;background:#fff;}.receipt{box-shadow:none;}}</style></head><body>'+
+    '<div class="receipt"><div class="r-head"><div class="r-logo">SDL</div><div class="r-sub">Swastik Digital Library</div>'+
+    '<div class="r-rtitle">📄 Fee Receipt</div><div class="r-rno">Receipt No: '+d.receiptNo+'</div></div>'+
+    '<div class="r-body">'+
+    '<div class="r-row"><span class="r-lbl">Student Name</span><span class="r-val">'+s.name+'</span></div>'+
+    '<div class="r-row"><span class="r-lbl">Cabin No.</span><span class="r-val">'+s.cabin+'</span></div>'+
+    '<div class="r-row"><span class="r-lbl">Shift</span><span class="r-val">'+sLabel(s.shift)+'</span></div>'+
+    (s.phone?'<div class="r-row"><span class="r-lbl">Phone</span><span class="r-val">'+s.phone+'</span></div>':'')+
+    '<div class="r-row"><span class="r-lbl">Month</span><span class="r-val">'+d.monthName+'</span></div>'+
+    '<div class="r-row"><span class="r-lbl">Date Issued</span><span class="r-val">'+d.dateStr+'</span></div>'+
+    '<div class="r-amt"><div class="r-amt-lbl">Amount Paid</div><div class="r-amt-val">₹'+paidAmt.toLocaleString('en-IN')+'</div>'+
+    '<div class="r-status '+statusCls+'">'+statusTxt+'</div></div>'+
+    '<div class="r-row"><span class="r-lbl">Monthly Fee</span><span class="r-val">₹'+Number(s.fee).toLocaleString('en-IN')+'</span></div>'+
+    balanceRow+
+    '<div class="r-sign"><span>Student Signature: _______________</span><span>Authorized: _______________</span></div>'+
+    '</div><div class="r-footer">Thank you for choosing Swastik Digital Library · SDL v3.0</div></div>'+
+    '<script>window.print();<\/script></body></html>';
+  closeRcptOv();
+  var w = window.open('','_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+  else { toast2('Allow popups to print receipt!'); }
+}
+
+// EXPOSE ALL FUNCTIONS TO GLOBAL SCOPE (replaces safety stubs)
+window.doLogin = doLogin;
+window.doLogout = doLogout;
+window.showPage = showPage;
+window.goBack = goBack;
+window.toggleTheme = toggleTheme;
+window.renderStudents = renderStudents;
+window.setF = setF;
+window.setCS = setCS;
+window.showCabDet = showCabDet;
+window.confirmFee = confirmFee;
+window.opPart = opPart;
+window.savePartial = savePartial;
+window.chMon = chMon;
+window.openAdd = openAdd;
+window.openAddCabin = openAddCabin;
+window.onSC = onSC;
+window.saveStu = saveStu;
+window.prevPhoto = prevPhoto;
+window.openDet = openDet;
+window.editStu = editStu;
+window.openWA = openWA;
+window.confirmDelStu = confirmDelStu;
+window.openM = openM;
+window.closeM = closeM;
+window.saveFeeStr = saveFeeStr;
+window.saveCabinSettings = saveCabinSettings;
+window.exportData = exportData;
+window.importData = importData;
+window.closeConfirm = closeConfirm;
+window.checkInternet = checkInternet;
+window.openImgLb = openImgLb;
+window.closeImgLb = closeImgLb;
+window.generateReceipt = generateReceipt;
+window.sendReceiptWA = sendReceiptWA;
+window.printReceiptDoc = printReceiptDoc;
+window.closeRcptOv = closeRcptOv;
+
+// Flush any queued calls that came in before module loaded
+_sdlReady = true;
+_sdlQueue.forEach(function(item) {
+  if (window[item[0]]) window[item[0]].apply(null, item[1]);
+});
+_sdlQueue = [];
+
+</script>
+</body>
+</html>
